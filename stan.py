@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 
 from konlpy.tag import Okt
+from konlpy.utils import pprint
 import codecs
 import csv
 
 def mkNoun(filename):
     src = codecs.open(filename, 'r', encoding='utf8').read()
     okt = Okt()
-    print(src)
-    print('-' * 20)
+    # print(src)
+    # print('-' * 20)
 
-    malist = okt.pos(src, norm=True, stem=True)
+    malist = okt.nouns(src)
 
-    for tuple in malist[:]:
-        if tuple[1] != 'Noun':
-          malist.remove(tuple)
+    # malist = okt.nouns(str)
+    # pprint(malist)
 
     return malist
 
@@ -39,7 +39,7 @@ def mkDic():
 def countPN(malist, dic):
     pos = 0
     neg = 0
-    sum = len(malist)
+    # sum = len(malist)
     for m in malist:
         if m[0] in dic:
             pos = pos + (float)(dic[m[0]][1])
@@ -47,6 +47,7 @@ def countPN(malist, dic):
             # if dic[m[0]][1] == '1':
             #     print(m[0])
 
+    sum = neg + pos
     return pos / sum, neg / sum
 
 def stan(filename):
@@ -56,13 +57,15 @@ def stan(filename):
 
     pos, neg = countPN(malist, dic)
 
+    print(pos, neg)
+
     if (pos > neg):
         return 1    # 1: 긍정
     else:
         return -1   # -1: 부정
 
 if __name__ == '__main__':
-    result = stan('./src_pos.txt')
+    result = stan('./src_neg.txt')
     if result == 1:
         print('긍정')
     elif result == -1:

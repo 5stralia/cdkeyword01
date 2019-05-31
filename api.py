@@ -3,6 +3,7 @@
 from flask import Flask
 from flask_restful import Resource, Api
 from flask_cors import CORS
+from flask import send_file
 
 from readdb import searchDb, searchP
 
@@ -57,9 +58,14 @@ class SearchKeywords(Resource):
                      'size': len(neg)}
                 }
 
+class SearchImg(Resource):
+    def get(self, filename):
+        print(filename)
+        return send_file("./wordcloud.png", mimetype='image/png')
 
 api.add_resource(SearchPopular, '/popular')
 api.add_resource(SearchKeywords, '/search/<string:name>')
+api.add_resource(SearchImg, '/searchimg/<string:filename>')
 
 if __name__ == '__main__':
     app.run(debug=True)
