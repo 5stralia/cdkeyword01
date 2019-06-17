@@ -6,16 +6,14 @@ from flask_cors import CORS
 from flask import send_file
 
 from readdb import DB
-from AnalysisNewsKewords import runOnWeb
 
 app = Flask(__name__)
 api = Api(app)
 CORS(app)
 
-db = DB()
-
 class SearchPopular(Resource):
     def get(self):
+        db = DB()
         keywords = []
         rows = db.searchP()
         for r in rows:
@@ -27,14 +25,13 @@ class SearchPopular(Resource):
 
 class SearchKeywords(Resource):
     def get(self, name):
+        db = DB()
         rows, sumOfKeyword = db.searchDb(name)
 
         if not rows:
-            # todo : 저장된 자료가 없으니 크롤링 시작시키기
+            db = DB()
             db.isIn(name=name)
             return {'get': 'fail'}
-
-        # todo : 너무 오래된 자료일 때 크롤링 시작시키기
 
         keywords = []
         pos = []
@@ -72,4 +69,3 @@ api.add_resource(SearchImg, '/searchimg/<string:filename>')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
-    # app.run(debug=True)

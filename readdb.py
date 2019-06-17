@@ -14,6 +14,7 @@ class DB:
         self.curs = self.conn.cursor()
 
     def searchP(self):
+        rows = None
         try:
             sql = """
                             SELECT keyword, COUNT(*)
@@ -22,13 +23,17 @@ class DB:
                             ORDER BY COUNT(*) DESC
                             LIMIT 10"""
             self.curs.execute(sql)
+            rows = self.curs.fetchall()
 
         except pymysql.err.DatabaseError as e:
             print("searchP", e)
+        finally:
+            self.conn.close()
 
-        return self.curs.fetchall()
+        return rows
 
     def searchDb(self, name):
+        rows = None
         try:
             sql = """
                         INSERT INTO Search(keyword) VALUE(%s)
@@ -52,12 +57,15 @@ class DB:
                         WHERE Name.name = %s AND Keywords.keywords_pk = Name.pk
                         ORDER BY Keywords.rank"""
             self.curs.execute(sql, name)
+            rows = self.curs.fetchall()
 
 
         except pymysql.err.DatabaseError as e:
             print("searchDb", e)
+        finally:
+            self.conn.close()
 
-        return self.curs.fetchall(), sumOfKeyword
+        return rows, sumOfKeyword
 
     def insertName(self, name):
         try:
@@ -89,7 +97,6 @@ class DB:
                     VALUE(%s, %s, %s, %s)
                 """
                 rank = rank + 1
-                print('data', (rank, item['tag'], fk, item['count'], ))
                 self.curs.execute(sql, (rank, item['tag'], fk, item['count'], ))
 
             rank = 1
@@ -116,6 +123,8 @@ class DB:
 
         except pymysql.err.DatabaseError as e:
             print("error inDb", e)
+        finally:
+            self.conn.close()
 
     def isIn(self, name):
         try:
@@ -124,7 +133,10 @@ class DB:
             rows = self.curs.fetchall()
             if not rows:
                 print('start crawling', name)
-                threading.Thread(target=self.threadDb, args=(name, )).start()
+                try:
+                    threading.Thread(target=self.threadDb, args=(name, )).start()
+                except threading.ThreadError as e:
+                    print(e)
                 return False
             else:
                 print('exist name', name)
@@ -140,46 +152,7 @@ class DB:
         fk = self.insertName(name)
         analysis = Analysis()
         keywords = analysis.runOnWeb(name)
+        print(name, 'keywords:: ', keywords)
         print('end crawling', name)
         self.inDb(name, keywords, fk)
         print('input db', name)
-
-if __name__ == '__main__':
-    db = DB()
-
-    sum = 30
-    full = [
-        {'tag': 'tag1', 'count': 1},
-        {'tag': 'tag2', 'count': 2},
-        {'tag': 'tag3', 'count': 3},
-        {'tag': 'tag4', 'count': 4},
-        {'tag': 'tag5', 'count': 5},
-        {'tag': 'tag6', 'count': 6},
-        {'tag': 'tag7', 'count': 7},
-        {'tag': 'tag8', 'count': 8},
-        {'tag': 'tag9', 'count': 9},
-        {'tag': 'tag10', 'count': 10},
-    ]
-    pos = [
-        {'tag': 'tag1', 'count': 1},
-        {'tag': 'tag2', 'count': 2},
-        {'tag': 'tag3', 'count': 3},
-        {'tag': 'tag4', 'count': 4},
-        {'tag': 'tag5', 'count': 5},
-    ]
-    neg = [
-        {'tag': 'tag1', 'count': 1},
-        {'tag': 'tag2', 'count': 2},
-        {'tag': 'tag3', 'count': 3},
-        {'tag': 'tag4', 'count': 4},
-        {'tag': 'tag5', 'count': 5},
-    ]
-
-    data = {'sum': sum,
-            'full': full,
-            'pos': pos,
-            'neg': neg}
-
-    test = 'test5'
-    db.insertName(test)
-    db.inDb(test, data)
